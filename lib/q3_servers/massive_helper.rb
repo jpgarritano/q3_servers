@@ -4,20 +4,20 @@ module Q3Servers
   class MassiveHelper
     attr_accessor :sockets, :servers
 
-    def initialize(servers, context)
-      @context = context
+    def initialize(servers, logger)
+      @logger = logger
       @servers = servers.each_with_object({}) do |server, hsh|
         hsh[server.unique_index] = server
       end
     end
   
     def read_info_servers(max_retries, timeout, &block)
-      puts '======== Read Info servers ========'
+      @logger.info '======== Read Info servers ========' if @logger
       read_info(servers.map { |_unique_index, server| server.socket }, max_retries, timeout, &Proc.new)
     end
   
     def read_status_servers(servers, max_retries, timeout)
-      puts '======== Read Status servers ========'
+      @logger.info '======== Read Status servers ========' if @logger
       read_info(servers.map(&:socket), max_retries, timeout, &Proc.new)
     end
   
@@ -39,7 +39,7 @@ module Q3Servers
           end
         else
           retries += 1
-          puts "Retry n #{retries}"
+          @logger.info "Retry n #{retries}" if @logger
         end
       end
       servers_with_info

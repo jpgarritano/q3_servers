@@ -31,7 +31,7 @@ module Q3Servers
       @logger = Logger.new(STDOUT)
     end
 
-    def fetch_servers(filter = {}, use_threads: false)
+    def fetch_servers(filter = {}, use_threads = false)
       servers_list_from_master if master_server_outdated? && !only_favorites?
       fetch_info_servers(filter, use_threads)
     end
@@ -156,7 +156,8 @@ module Q3Servers
     end
 
     def massive_read_info_status(servers, filter)
-      massive_helper = MassiveHelper.new(servers.select(&:request_status?), self)
+      logger_object = debug ? logger : nil
+      massive_helper = MassiveHelper.new(servers.select(&:request_status?), logger_object)
       alive_servers = massive_helper.read_info_servers(2, timeout) do |server|
         server.read_info unless cached_info?(server)
       end
