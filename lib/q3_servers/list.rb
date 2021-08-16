@@ -2,6 +2,7 @@
 
 require 'socket'
 require 'date'
+require 'logger'
 
 module Q3Servers
   class List
@@ -9,7 +10,7 @@ module Q3Servers
     MAX_LENGTH = 65_536
 
     attr_reader :master_socket, :threads, :servers, :favorites
-    attr_accessor :cache, :timeout, :master_updated_at, :debug, :master_cache_secs, :info_cache_secs, :only_favorites,
+    attr_accessor :cache, :timeout, :master_updated_at, :debug, :logger, :master_cache_secs, :info_cache_secs, :only_favorites,
                   :master_address, :master_port
     alias only_favorites? only_favorites
     alias cache? cache
@@ -27,6 +28,7 @@ module Q3Servers
       @master_port = 27_900
       @master_address = 'master.urbanterror.info' # 51.75.224.242
       @threads = []
+      @logger = Logger.new(STDOUT)
     end
 
     def fetch_servers(filter = {}, use_threads: false)
@@ -44,11 +46,11 @@ module Q3Servers
     end
 
     def cached_info?(server)
-      cache? && server_info?(server) && !server_info_outdated?(server)
+      cache? && server.info? && !server_info_outdated?(server)
     end
 
     def cached_status?(server)
-      cache? && server_status?(server) && !server_status_outdated?(server)
+      cache? && server.info_status? && !server_status_outdated?(server)
     end
 
     def add_server(server)
@@ -76,14 +78,6 @@ module Q3Servers
       server.get_info_connect
       server.request_and_get_status if server.filter_info(filter)
       server.info
-    end
-
-    def server_info?(server)
-      !server.info.empty?
-    end
-
-    def server_status?(server)
-      server_info?(server) && !server.info_status.empty?
     end
 
     def fill_list_favorites
@@ -142,7 +136,7 @@ module Q3Servers
     end
 
     def print_debug(info)
-      p info if @debug
+      logger.info(info) if @debug
     end
 
     def to_ip(decimal)
@@ -154,11 +148,11 @@ module Q3Servers
     end
 
     def server_info_outdated?(server)
-      (!server_info?(server) or (DateTime.now > (server.updated_at + Rational(info_cache_secs, 86_400))))
+      (!server.info? or (DateTime.now > (server.updated_at + Rational(info_cache_secs, 86_400))))
     end
 
     def server_status_outdated?(server)
-      (!server_status?(server) or (DateTime.now > (server.status_updated_at + Rational(info_cache_secs, 86_400))))
+      (!server.info_status? or (DateTime.now > (server.status_updated_at + Rational(info_cache_secs, 86_400))))
     end
 
     def massive_read_info_status(servers, filter)

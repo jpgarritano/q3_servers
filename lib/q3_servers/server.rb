@@ -95,6 +95,14 @@ module Q3Servers
       define_method("#{status}_status?") { self.status == status }
     end
 
+    def info?
+      !info.empty?
+    end
+
+    def info_status?
+      info? && !info_status.empty?
+    end
+    
     private
 
     def touch!
