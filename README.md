@@ -38,16 +38,16 @@ Or install it yourself as:
     servers = q3_urt_list.fetch_servers({})
 ```
 ##### Threads
-  You can use use_threads keyword, for multi-threaded fetching (one for each server found!)
+  You can use the second argument as true, for multi-threaded fetching (one for each server found!)
    ```ruby
-   q3_urt_list.fetch_servers({}, use_threads: true)
+   q3_urt_list.fetch_servers({}, true)
    ```
 
 ##### Filter
   Filter by keys from "info" attribute in Q3Servers::Server
   example:
   ```ruby
-   q3_urt_list.fetch_servers({hostname: "Arg"})
+   q3_urt_list.fetch_servers({hostname: "Arg"}, false)
    ```
 
 #### And now read information from each server
