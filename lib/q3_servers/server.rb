@@ -29,11 +29,6 @@ module Q3Servers
       !f.empty?
     end
 
-    def get_info_connect
-      request_info
-      read_info
-    end
-
     def request_info
       self.status = :request
       puts "Requesting info to #{connection}"
@@ -102,7 +97,7 @@ module Q3Servers
     def info_status?
       info? && !info_status.empty?
     end
-    
+
     private
 
     def touch!

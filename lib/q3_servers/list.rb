@@ -36,15 +36,6 @@ module Q3Servers
       fetch_info_servers(filter, use_threads)
     end
 
-    def request_server_info(server, filter, use_threads)
-      print_debug("INFO Server: Connecting to Server id => #{server.unique_index}")
-      if use_threads
-        thread_server_info(server, filter)
-      else
-        server.request_info
-      end
-    end
-
     def cached_info?(server)
       cache? && server.info? && !server_info_outdated?(server)
     end
@@ -68,16 +59,19 @@ module Q3Servers
 
     private
 
-    def thread_server_info(server, filter)
+    def thread_server_info_status(server, filter)
       @threads << Thread.new { get_server_info_status_filter(server, filter) }
     rescue ThreadError => e
       p "Can't create thread! => #{e.inspect}"
     end
 
     def get_server_info_status_filter(server, filter)
-      server.get_info_connect
-      server.request_and_get_status if server.filter_info(filter)
-      server.info
+      unless cached_info?(server)
+        print_debug("INFO Server: Connecting to Server id => #{server.unique_index}")
+        server.request_info
+        server.read_info
+      end
+      server.request_and_get_status if server.filter_info(filter) && !cached_status?(server)
     end
 
     def fill_list_favorites
@@ -99,25 +93,15 @@ module Q3Servers
     end
 
     def fetch_info_servers(filter, use_threads)
-      servers.each do |server|
-        cache_or_request_server_info(server, filter, use_threads)
-      end
-      # wait for "info servers"
       if use_threads
+        servers.each { |server| thread_server_info_status(server, filter) }
         @threads.each(&:join) # wait for threads
       else
         massive_read_info_status(servers, filter)
       end
+      
       destroy_socket_servers
       servers.select { |server| server.filter_info(filter) }
-    end
-
-    def cache_or_request_server_info(server, filter, use_threads)
-      if cached_info?(server)
-        print_debug("INFO Server cached => #{server.unique_index}")
-      else
-        request_server_info(server, filter, use_threads)
-      end
     end
 
     def servers_list_from_master
@@ -157,15 +141,24 @@ module Q3Servers
 
     def massive_read_info_status(servers, filter)
       logger_object = debug ? logger : nil
-      massive_helper = MassiveHelper.new(servers.select(&:request_status?), logger_object)
-      alive_servers = massive_helper.read_info_servers(2, timeout) do |server|
+      requested_servers = servers.reject { |server| cached_info?(server) }
+
+      requested_servers.each do |not_cached_server|
+        print_debug("INFO Server: Connecting to Server id => #{not_cached_server.unique_index}")
+        not_cached_server.request_info
+      end
+
+      massive_helper = MassiveHelper.new(requested_servers, logger_object)
+      massive_helper.read_info_servers(2, timeout) do |server|
         server.read_info unless cached_info?(server)
       end
 
-      filtered_servers = alive_servers.select { |server| server.filter_info(filter) }
-      filtered_servers.each(&:request_status)
+      requested_servers = servers.reject { |server| cached_status?(server) }
+      filtered_servers = requested_servers.select { |server| server.filter_info(filter) }
+      filtered_servers.each { |server| server.request_status unless cached_status?(server) }
 
-      massive_helper.read_status_servers(filtered_servers, 2, timeout) do |server|
+      massive_helper.servers = filtered_servers
+      massive_helper.read_status_servers(2, timeout) do |server|
         server.read_status unless cached_status?(server)
       end
     end

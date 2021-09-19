@@ -2,32 +2,30 @@
 
 module Q3Servers
   class MassiveHelper
-    attr_accessor :sockets, :servers
+    attr_reader :sockets, :servers
 
     def initialize(servers, logger)
       @logger = logger
-      @servers = servers.each_with_object({}) do |server, hsh|
-        hsh[server.unique_index] = server
-      end
+      self.servers = servers
     end
-  
+
     def read_info_servers(max_retries, timeout, &block)
-      @logger.info '======== Read Info servers ========' if @logger
-      read_info(servers.map { |_unique_index, server| server.socket }, max_retries, timeout, &Proc.new)
+      @logger&.info '======== Read Info servers ========'
+      read_info(servers.map { |_unique_index, server| server.socket }, max_retries, timeout, &block)
     end
-  
-    def read_status_servers(servers, max_retries, timeout)
-      @logger.info '======== Read Status servers ========' if @logger
-      read_info(servers.map(&:socket), max_retries, timeout, &Proc.new)
+
+    def read_status_servers(max_retries, timeout, &block)
+      @logger&.info '======== Read Status servers ========'
+      read_info(servers.map { |_unique_index, server| server.socket }, max_retries, timeout, &block)
     end
-  
+
     def read_info(sockets, max_retries, timeout, &block)
       servers_with_info = []
       sockets_completed = 0
       retries = 0
       sockets.size.times do |_i|
         break if (sockets_completed >= sockets.size) || (retries >= max_retries)
-  
+
         ready_sockets = IO.select(sockets, nil, nil, timeout)
         if ready_sockets && (ready_sockets = ready_sockets[0])
           retries = 0
@@ -39,16 +37,22 @@ module Q3Servers
           end
         else
           retries += 1
-          @logger.info "Retry n #{retries}" if @logger
+          @logger&.info "Retry n #{retries}"
         end
       end
       servers_with_info
     end
-  
+
     def calculate_index(socket)
       # to determine which socket answered
       addr = socket.peeraddr(false)
       ServerConnection.new(addr.last, addr[1]).unique_index
-    end  
+    end
+
+    def servers=(new_servers)
+      @servers = new_servers.each_with_object({}) do |server, hsh|
+        hsh[server.unique_index] = server
+      end
+    end
   end
 end

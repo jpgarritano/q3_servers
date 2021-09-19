@@ -54,6 +54,7 @@ module Q3Servers
     end
 
     def request_status_server
+      connect
       send_data("#{prepend_oob_data}getstatus") # request step 2
     end
 
