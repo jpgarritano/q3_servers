@@ -22,11 +22,6 @@ module Q3Servers
       Digest::MD5.hexdigest("#{ip}:#{port}")
     end
 
-    def server_info_connect
-      request_info_server
-      read_info_server
-    end
-
     def connect
       @socket&.close
       @socket = UDPSocket.new
@@ -47,8 +42,6 @@ module Q3Servers
 
     # INFO 2/2
     def request_and_get_server_status
-      # sv_status = send_and_read(prepend_oob_data + 'getstatus')
-      # sv_status ? parse_sv_status(sv_status) : {} # parse step 2
       request_status_server
       read_status_server
     end
@@ -65,11 +58,6 @@ module Q3Servers
     end
 
     private
-
-    def send_and_read(data)
-      send_data(data)
-      read_data
-    end
 
     def send_data(data)
       socket.send(data, 0)
