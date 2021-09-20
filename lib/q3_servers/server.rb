@@ -12,8 +12,8 @@ module Q3Servers
       @info = info || {}
     end
 
-    def name_c_sanitized
-      info['hostname'].gsub(/(\^[0-9]{1})/, '') if info.key?('hostname')
+    def sanitize_hostname
+      info['hostname'] = info['hostname'].gsub(/(\^[0-9]{1})/, '') if info.key?('hostname')
     end
 
     def gametype
@@ -24,7 +24,6 @@ module Q3Servers
       return false if info.empty?
       return true if filter.empty?
 
-      info['hostname'] = name_c_sanitized if info.key?('hostname')
       f = filter.select { |k, v| info.key?(k.to_s) and (info[k.to_s].downcase =~ /#{v.to_s.downcase}/) }
       !f.empty?
     end
@@ -44,6 +43,7 @@ module Q3Servers
     def read_info
       self.status = :response
       self.info = connection.read_info_server
+      sanitize_hostname
       touch!
       info
     end
