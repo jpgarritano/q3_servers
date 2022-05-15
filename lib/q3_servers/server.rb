@@ -12,10 +12,6 @@ module Q3Servers
       @info = info || {}
     end
 
-    def sanitize_hostname
-      info['hostname'] = info['hostname'].gsub(/(\^[0-9]{1})/, '') if info.key?('hostname')
-    end
-
     def gametype
       GT.fetch(info['gametype'], '')
     end
@@ -106,6 +102,10 @@ module Q3Servers
 
     def status_touch!
       info['sv_status']['updated_at'] = DateTime.now
+    end
+
+    def sanitize_hostname
+      info['hostname'] = info['hostname'].gsub(/(\^[0-9]{1})/, '') if info.key?('hostname')
     end
   end
 end

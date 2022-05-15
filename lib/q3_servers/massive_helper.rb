@@ -10,12 +10,6 @@ module Q3Servers
     end
 
     def read_info_servers(max_retries, timeout, &block)
-      @logger&.info '======== Read Info servers ========'
-      read_info(servers.map { |_unique_index, server| server.socket }, max_retries, timeout, &block)
-    end
-
-    def read_status_servers(max_retries, timeout, &block)
-      @logger&.info '======== Read Status servers ========'
       read_info(servers.map { |_unique_index, server| server.socket }, max_retries, timeout, &block)
     end
 

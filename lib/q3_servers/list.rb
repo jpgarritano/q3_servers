@@ -149,6 +149,7 @@ module Q3Servers
       end
 
       massive_helper = MassiveHelper.new(requested_servers, logger_object)
+      print_debug('======== Read Info servers ========')
       massive_helper.read_info_servers(2, timeout) do |server|
         server.read_info unless cached_info?(server)
       end
@@ -158,7 +159,8 @@ module Q3Servers
       filtered_servers.each { |server| server.request_status unless cached_status?(server) }
 
       massive_helper.servers = filtered_servers
-      massive_helper.read_status_servers(2, timeout) do |server|
+      print_debug('======== Read Status servers ========')
+      massive_helper.read_info_servers(2, timeout) do |server|
         server.read_status unless cached_status?(server)
       end
     end
